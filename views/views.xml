@@ -1,0 +1,33 @@
+<odoo>
+      <record id="zf_view_move_form_inherit" model="ir.ui.view">
+        <field name="name">.zf.account.move.form.inherit</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_date']" position="after">
+              <field name="reservation_date" readonly="1"/>
+              <field name="payment_due_date_in_case_of_default" readonly="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='partner_id']" position="after">
+              <field name="wordpress_reservation_id" readonly="1"/>
+            </xpath>
+        </field>
+      </record>
+
+      <record id="zf_view_account_invoice_filter_inherit" model="ir.ui.view">
+        <field name="name">zf.account.invoice.filter.inherit</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_invoice_tree"/>
+        <field name="arch" type="xml">
+          <xpath expr="//field[@name='invoice_date']" position="after">
+            <field name="reservation_date" readonly="1"/>
+            <field name="payment_due_date_in_case_of_default" readonly="1"/>
+          </xpath>
+
+          <xpath expr="//field[@name='invoice_partner_display_name']" position="after">
+            <field name="wordpress_reservation_id" readonly="1"/>
+          </xpath>
+        </field>
+      </record>
+</odoo>

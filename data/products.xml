@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_service" model="product.product">
+        <field name="name">Service Product</field>
+        <field name="type">service</field>
+        <field name="categ_id" ref="product.product_category_all"/>
+        <field name="list_price">100.0</field>
+        <field name="standard_price">50.0</field>
+        <field name="purchase_ok">False</field>
+    </record>
+
+</odoo>
