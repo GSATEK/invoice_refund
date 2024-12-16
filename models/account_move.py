@@ -76,6 +76,7 @@ class AccountMove(models.Model):
         account_move_line = self.env['account.move.line'].create({
             'product_id': product_id.id,
             'name': compose_name(vals.get('service_name'), vals.get('service_description')),
+            'tax_ids': False,
             'quantity': 1,
             'price_unit': vals.get('service_price'),
             'move_id': self.id,
