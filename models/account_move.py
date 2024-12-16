@@ -81,14 +81,22 @@ class AccountMove(models.Model):
             'move_id': self.id,
         })
         return account_move_line
+    
+    def generate_payment_link(self):
+        payment_link = self.env['payment.link.wizard'].create({
+            'amount': self.amount_total,
+            'currency_id': self.currency_id.id,
+            'partner_id': self.partner_id.id,
+            'res_model': 'account.move',
+            'res_id': self.id,
+            'description': self.name,
+        })
+        return payment_link.link
 
     @api.model
     def create_invoice(self, vals: dict):
         try:
-            print("vals", vals, '\n')
             self._validate_invoice_json(vals)
-            print("Se pasó la validación de campos")
-            
             move_vals = {
             'partner_id': self.get_partner_id_from_vals(vals.get('client_email'), vals.get('client_name')),
             'move_type': 'out_invoice',
@@ -101,7 +109,8 @@ class AccountMove(models.Model):
             invoice = self.create(move_vals)
             invoice.create_account_move_line_from_vals(vals)
             invoice.action_post()
+            payment_link = invoice.generate_payment_link()
            
-            return {"success": True, "message": "Factura creada correctamente"}
+            return {"success": True, "message": "Factura creada correctamente", "payment_link": payment_link}
         except Exception as e:
             return {"success": False, "message": str(e)}

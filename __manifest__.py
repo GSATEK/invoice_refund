@@ -14,7 +14,7 @@
     'category': 'Accounting/Accounting',
     'version': '0.1',
 
-    'depends': ['account', 'website'],
+    'depends': ['account', 'website', 'contacts'],
 
     'data': [
         # 'security/ir.model.access.csv',
