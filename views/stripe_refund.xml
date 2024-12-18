@@ -15,6 +15,8 @@
                         <field name="amount_refunded" readonly="1"/>
                         <field name="charge" readonly="1"/>
                         <field name="created" readonly="1"/>
+                        <field name="reason" readonly="1"/>
+                        <field name="description" readonly="1" />
                     </group>
                 </sheet>
             </form>

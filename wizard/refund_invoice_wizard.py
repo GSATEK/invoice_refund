@@ -5,6 +5,20 @@ from datetime import datetime
 from odoo import models, fields, api
 from  odoo.exceptions import ValidationError
 
+OPTIONS = [
+            ('duplicate', 'Duplicado'),
+            ('fraudulent', 'Fraudulento'),
+            ('requested_by_customer', 'Solicitado por el cliente'),
+            ('other', 'Otro'),
+        ]
+
+def get_option(options: list, key: str) -> str:
+    if not key:
+        return ""
+    
+    reason = list(filter(lambda opt: opt[0] == key, options))
+    return reason[0][1] if reason else ""
+
 class StripeRequestHandler:
     endpoints = {
         'create_refund': 'https://api.stripe.com/v1/refunds'
@@ -57,12 +71,7 @@ class RefundInvoiceWizard(models.TransientModel):
     invoice_id = fields.Many2one('account.move', string="Factura", default= lambda self: self._default_invoice(), retured=True)
     currency_id = fields.Many2one('res.currency', string="Moneda", related='invoice_id.currency_id', readonly=True)
     refund_reason = fields.Selection(
-        [
-            ('duplicate', 'Duplicado'),
-            ('fraudulent', 'Fraudulento'),
-            ('requested_by_customer', 'Solicitado por el cliente'),
-            ('other', 'Otro'),
-        ],
+        OPTIONS,
         string="Motivo del reembolso",
     )
     refund_description = fields.Text(string="Descripción del reembolso")
@@ -161,7 +170,9 @@ class RefundInvoiceWizard(models.TransientModel):
                 "amount_refunded": self.amount,
                 "charge": response.get('charge'),
                 "created": datetime.fromtimestamp(response.get('created')),
-                "refund_status": response.get('status')
+                "refund_status": response.get('status'),
+                "reason":  get_option(OPTIONS, response.get('reason')),
+                "description": self.refund_description if self.refund_description else ""
             })
             
             #update invoice payment state

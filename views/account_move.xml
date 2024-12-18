@@ -8,6 +8,7 @@
               <field name="reservation_date" readonly="1"/>
               <field name="payment_due_date_in_case_of_default" readonly="1"/>
               <field name="stripe_refund_ids" readonly="1" invisible="1"/>
+              <field name="stripe_fully_refunded" invisible="1"/>
             </xpath>
 
             <xpath expr="//field[@name='partner_id']" position="after">
@@ -19,7 +20,7 @@
                       string="Reembolso" 
                       type="action" 
                       class="btn-primary"
-                      attrs="{'invisible': ['|', '|', ('payment_state', 'not in', ['paid', 'stripe_refund']), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice')]}"/>
+                      attrs="{'invisible': ['|', '|', '|', ('payment_state', 'not in', ['paid', 'stripe_refund']), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice'), ('stripe_fully_refunded', '=', True)]}"/>
             </xpath>
 
             <xpath expr="//button[@name='action_reverse']" position="attributes">
