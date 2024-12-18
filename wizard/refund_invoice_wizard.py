@@ -1,5 +1,6 @@
 import requests
 import json
+from datetime import datetime
 
 from odoo import models, fields, api
 from  odoo.exceptions import ValidationError
@@ -136,8 +137,22 @@ class RefundInvoiceWizard(models.TransientModel):
         if response.get('status_code') != 200:
             raise ValidationError(f"Error al procesar la solicitud de reembolso: {response.get('response')}")
         
-        self.invoice_id.write({
-            "payment_state": "stripe_refund"
-        })
+        response = response.get('response')
+        if response.get('status') == 'succeeded':
+            
+            #create stripe refund record
+            self.env['stripe.refund'].create({
+                "refund_id": response.get('id'),
+                "invoice_id": self.invoice_id.id,
+                "amount_refunded": self.amount,
+                "charge": response.get('charge'),
+                "created": datetime.fromtimestamp(response.get('created')),
+                "refund_status": response.get('status')
+            })
+            
+            #update invoice payment state
+            self.invoice_id.write({
+                "payment_state": "stripe_refund"
+            })
         
         

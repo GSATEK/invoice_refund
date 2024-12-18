@@ -20,6 +20,7 @@
         'security/ir.model.access.csv',
         'data/products.xml',
         'views/account_move.xml',
+        'views/stripe_refund.xml',
         'wizard/refund_invoice_wizard.xml'
     ],
 }

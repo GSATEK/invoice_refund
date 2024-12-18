@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_refund_invoice_wizard_admin,refund_invoice_wizard_admin,model_refund_invoice_wizard,account.group_account_invoice,1,1,1,1
+access_stripe_refund_admin,stripe_refund_admin,model_stripe_refund,account.group_account_invoice,1,1,1,1

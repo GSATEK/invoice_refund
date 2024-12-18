@@ -12,6 +12,7 @@ class AccountMove(models.Model):
     reservation_date = fields.Datetime(string="Fecha de reserva")
     payment_due_date_in_case_of_default = fields.Datetime(string="Fecha de cobro en caso de incumplimiento")
     wordpress_reservation_id = fields.Char(string="ID de reserva en Wordpress")
+    stripe_refund_ids = fields.One2many('stripe.refund', 'invoice_id', string="Reembolsos Stripe")
     
     payment_state = fields.Selection(
         selection_add=[
