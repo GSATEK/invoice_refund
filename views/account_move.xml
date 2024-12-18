@@ -7,6 +7,7 @@
             <xpath expr="//field[@name='invoice_date']" position="after">
               <field name="reservation_date" readonly="1"/>
               <field name="payment_due_date_in_case_of_default" readonly="1"/>
+              <field name="stripe_refund_ids" readonly="1" invisible="1"/>
             </xpath>
 
             <xpath expr="//field[@name='partner_id']" position="after">
@@ -30,6 +31,16 @@
                       bg_color="bg-danger" 
                       title="Reembolso Stripe"
                       attrs="{'invisible': [('payment_state', '!=', 'stripe_refund')]}"/>
+            </xpath>
+
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button name="action_view_stripe_refunds" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-rotate-left"
+                        attrs="{'invisible': [('stripe_refund_count', '=', 0)]}">
+                    <field name="stripe_refund_count" widget="statinfo" string="Reembolsos"/>
+                        </button>
             </xpath>
         </field>
       </record>

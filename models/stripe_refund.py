@@ -12,5 +12,6 @@ class StripeRefund(models.Model):
     created = fields.Datetime(string="Creado", required=True)
     sequence = fields.Integer(default=10)
     refund_status = fields.Char(string="Estado de reembolso", required=True)
+    partner_id = fields.Many2one('res.partner', string="Cliente", related='invoice_id.partner_id', readonly=True)
     
    

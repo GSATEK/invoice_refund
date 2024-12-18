@@ -13,6 +13,12 @@ class AccountMove(models.Model):
     payment_due_date_in_case_of_default = fields.Datetime(string="Fecha de cobro en caso de incumplimiento")
     wordpress_reservation_id = fields.Char(string="ID de reserva en Wordpress")
     stripe_refund_ids = fields.One2many('stripe.refund', 'invoice_id', string="Reembolsos Stripe")
+    stripe_refund_count = fields.Integer(string="Cantidad de reembolsos Stripe", compute='_compute_stripe_refund_count')
+    
+    @api.depends('stripe_refund_ids')
+    def _compute_stripe_refund_count(self):
+        for record in self:
+            record.stripe_refund_count = len(record.stripe_refund_ids)
     
     payment_state = fields.Selection(
         selection_add=[
@@ -121,3 +127,27 @@ class AccountMove(models.Model):
             return {"success": True, "message": "Factura creada correctamente", "payment_link": payment_link}
         except Exception as e:
             return {"success": False, "message": str(e)}
+        
+    def action_view_stripe_refunds(self):
+        refunds = self.stripe_refund_ids
+        action = self.env['ir.actions.actions']._for_xml_id('invoice_refund.action_stripe_refund')
+        if len(refunds) > 1:
+            action['domain'] = [('id', 'in', refunds.ids)]
+        elif len(refunds) == 1:
+            form_view = [(self.env.ref('invoice_refund.view_stripe_refund_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state, view) for state, view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = refunds.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+            
+        context = self.env.context.copy()
+        if len(self) == 1:
+            context.update({
+                'default_invoice_id': self.id,
+                'default_partner_id': self.partner_id.id,
+            })
+        action['context'] = context
+        return action

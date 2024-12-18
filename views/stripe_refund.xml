@@ -8,7 +8,6 @@
             <form string="Reembolso de Stripe">
                 <sheet>
                     <group>
-                        <field name="sequence" widget="handle"/>
                         <field name="refund_id" readonly="1"/>
                         <field name="refund_status" readonly="1"/>
                         <field name="invoice_id" readonly="1"/>
@@ -27,6 +26,7 @@
         <field name="model">stripe.refund</field>
         <field name="arch" type="xml">
             <tree string="Reembolsos de Stripe">
+                <field name="sequence" widget="handle"/>
                 <field name="refund_id" decoration-bf="1" readonly="1"/>
                 <field name="refund_status" readonly="1"/>
                 <field name="invoice_id" readonly="1"/>
