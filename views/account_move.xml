@@ -19,7 +19,7 @@
                       string="Reembolso" 
                       type="action" 
                       class="btn-primary"
-                      attrs="{'invisible': ['|', '|', ('payment_state', '!=', 'paid'), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice')]}"/>
+                      attrs="{'invisible': ['|', '|', ('payment_state', 'not in', ['paid', 'stripe_refund']), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice')]}"/>
             </xpath>
 
             <xpath expr="//button[@name='action_reverse']" position="attributes">

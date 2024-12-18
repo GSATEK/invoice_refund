@@ -49,7 +49,10 @@ class RefundInvoiceWizard(models.TransientModel):
     
     def _default_amount(self):
         invoice = self.env['account.move'].browse(self._context.get('active_id'))
-        return invoice.amount_total
+        if invoice.stripe_refund_count == 0 and invoice.stripe_refunded_amount == 0:
+            return invoice.amount_total
+        
+        return invoice.amount_total - invoice.stripe_refunded_amount
 
     invoice_id = fields.Many2one('account.move', string="Factura", default= lambda self: self._default_invoice(), retured=True)
     currency_id = fields.Many2one('res.currency', string="Moneda", related='invoice_id.currency_id', readonly=True)
@@ -73,8 +76,19 @@ class RefundInvoiceWizard(models.TransientModel):
     @api.constrains('amount')
     def _check_amount(self):
         for record in self:
-            if record.amount > record.invoice_id.amount_total:
-                raise ValidationError("El monto a reembolsar no puede ser mayor que el monto de la factura")
+            if record.invoice_id.stripe_refund_count == 0:
+                if record.amount > record.invoice_id.amount_total:
+                    raise ValidationError("El monto a reembolsar no puede ser mayor que el monto de la factura")
+                return None
+                
+            if record.invoice_id.stripe_fully_refunded:
+                raise ValidationError("La factura ya ha sido completamente reembolsada")
+            
+            if not record.invoice_id.stripe_fully_refunded:
+                diff = record.invoice_id.amount_total - record.invoice_id.stripe_refunded_amount
+                if record.amount > diff:
+                    currency = record.invoice_id.currency_id.symbol
+                    raise ValidationError(f"El monto a reembolsar no puede ser mayor que el monto restante de la factura: {currency} {diff:,.2f}".replace('.', ','))
             
     def _get_stripe_payment_provider(self):
         stripe_payment_provider = self.env.ref('payment.payment_provider_stripe', raise_if_not_found=False)

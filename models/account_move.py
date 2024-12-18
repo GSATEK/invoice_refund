@@ -14,6 +14,24 @@ class AccountMove(models.Model):
     wordpress_reservation_id = fields.Char(string="ID de reserva en Wordpress")
     stripe_refund_ids = fields.One2many('stripe.refund', 'invoice_id', string="Reembolsos Stripe")
     stripe_refund_count = fields.Integer(string="Cantidad de reembolsos Stripe", compute='_compute_stripe_refund_count')
+    stripe_refunded_amount = fields.Monetary(string="Monto reembolsado", compute='_compute_stripe_refunded_amount', store=True)
+    stripe_fully_refunded = fields.Boolean(string="Totalmente reembolsado", compute='_compute_stripe_fully_refunded', store=True)
+    
+    @api.depends('stripe_refund_ids')
+    def _compute_stripe_refunded_amount(self):
+        for record in self:
+            if record.stripe_refund_ids:
+                record.stripe_refunded_amount = sum(record.stripe_refund_ids.mapped('amount_refunded'))
+            else:
+                record.stripe_refunded_amount = 0
+    
+    @api.depends('amount_total', 'stripe_refunded_amount')
+    def _compute_stripe_fully_refunded(self):
+        for record in self:
+            if record.amount_total:
+                record.stripe_fully_refunded = record.amount_total == record.stripe_refunded_amount
+            else:
+                record.stripe_fully_refunded = False
     
     @api.depends('stripe_refund_ids')
     def _compute_stripe_refund_count(self):
