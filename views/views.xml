@@ -24,6 +24,13 @@
             <xpath expr="//button[@name='action_reverse']" position="attributes">
               <attribute name="invisible">1</attribute>
             </xpath>
+
+            <xpath expr="//sheet/widget[@name='web_ribbon']" position="after">
+              <widget name="web_ribbon" 
+                      bg_color="bg-danger" 
+                      title="Reembolso Stripe"
+                      attrs="{'invisible': [('payment_state', '!=', 'stripe_refund')]}"/>
+            </xpath>
         </field>
       </record>
 
@@ -39,6 +46,10 @@
 
           <xpath expr="//field[@name='invoice_partner_display_name']" position="after">
             <field name="wordpress_reservation_id" readonly="1"/>
+          </xpath>
+
+          <xpath expr="//field[@name='payment_state']" position="attributes">
+            <attribute name="decoration-danger">payment_state in ('not_paid', 'stripe_refund')</attribute>
           </xpath>
         </field>
       </record>

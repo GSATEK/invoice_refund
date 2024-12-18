@@ -13,6 +13,11 @@ class AccountMove(models.Model):
     payment_due_date_in_case_of_default = fields.Datetime(string="Fecha de cobro en caso de incumplimiento")
     wordpress_reservation_id = fields.Char(string="ID de reserva en Wordpress")
     
+    payment_state = fields.Selection(
+        selection_add=[
+            ('stripe_refund', 'Reembolso Stripe'),
+            ])
+    
     @staticmethod
     def _validate_invoice_json(vals: dict):
         required_fields = [

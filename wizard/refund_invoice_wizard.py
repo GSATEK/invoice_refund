@@ -136,3 +136,8 @@ class RefundInvoiceWizard(models.TransientModel):
         if response.get('status_code') != 200:
             raise ValidationError(f"Error al procesar la solicitud de reembolso: {response.get('response')}")
         
+        self.invoice_id.write({
+            "payment_state": "stripe_refund"
+        })
+        
+        
