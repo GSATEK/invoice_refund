@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_refund_invoice_wizard_form" model="ir.ui.view">
+        <field name="name">refund.invoice.wizard.form</field>
+        <field name="model">refund.invoice.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reembolsos de Facturas">
+                <group>
+                    <field name="invoice_id" readonly="1"/>
+                    <field name="refund_reason"/>
+                    <field name="refund_description" 
+                           placeholder="Describa el motivo del reembolso..."
+                           attrs="{'required': [('refund_reason', '=', 'other')], 'invisible': [('refund_reason', '=', False)]}"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                </group>
+                <footer>
+                    <button string="Reembolso" type="object" name="refund_invoice" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_refund_invoice_wizard" model="ir.actions.act_window">
+        <field name="name">Reembolsos de Facturas</field>
+        <field name="res_model">refund.invoice.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_refund_invoice_wizard_form"/>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_invoice_refund_invoice_refund,invoice_refund.invoice_refund,model_invoice_refund_invoice_refund,base.group_user,1,1,1,1
+access_refund_invoice_wizard_admin,refund_invoice_wizard_admin,model_refund_invoice_wizard,account.group_account_invoice,1,1,1,1

@@ -17,8 +17,9 @@
     'depends': ['account', 'website', 'contacts'],
 
     'data': [
-        # 'security/ir.model.access.csv',
+        'security/ir.model.access.csv',
         'data/products.xml',
         'views/views.xml',
+        'wizard/refund_invoice_wizard.xml'
     ],
 }

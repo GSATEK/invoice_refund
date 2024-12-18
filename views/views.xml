@@ -12,6 +12,14 @@
             <xpath expr="//field[@name='partner_id']" position="after">
               <field name="wordpress_reservation_id" readonly="1"/>
             </xpath>
+
+            <xpath expr="//button[@name='action_reverse']" position="after">
+              <button name="invoice_refund.action_refund_invoice_wizard" string="Reembolso" type="action" class="btn-primary"/>
+            </xpath>
+
+            <xpath expr="//button[@name='action_reverse']" position="attributes">
+              <attribute name="invisible">0</attribute>
+            </xpath>
         </field>
       </record>
 
