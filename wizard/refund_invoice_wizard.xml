@@ -16,7 +16,11 @@
                     <field name="amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                 </group>
                 <footer>
-                    <button string="Reembolso" type="object" name="refund_invoice" class="btn-primary"/>
+                    <button string="Reembolso" 
+                            type="object" 
+                            name="refund_invoice" 
+                            class="btn-primary" 
+                            confirm="¿Está seguro de hacer este reembolso?"/>
                     <button string="Cancelar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
