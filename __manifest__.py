@@ -19,7 +19,7 @@
     'data': [
         'security/ir.model.access.csv',
         'data/products.xml',
-        'views/views.xml',
+        'views/account_move.xml',
         'wizard/refund_invoice_wizard.xml'
     ],
 }
