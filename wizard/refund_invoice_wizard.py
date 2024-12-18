@@ -97,16 +97,10 @@ class RefundInvoiceWizard(models.TransientModel):
     def _get_charge_id(self, provider_id: int) -> str:
         return self.invoice_id.transaction_ids.filtered(lambda tx: tx.state == 'done'\
             and tx.provider_id.id == provider_id).provider_reference
-
-    def refund_invoice(self):
-        stripe_provider = self._get_stripe_payment_provider()
-        stripe = StripeRequestHandler(
-            api_key=stripe_provider.stripe_secret_key
-            )
         
-        charge_id = self._get_charge_id(
-            provider_id=stripe_provider.id
-            )
+    def _prepare_data(self, provider_id: int) -> dict:
+        charge_id = self._get_charge_id(provider_id=provider_id)
+        
         if not charge_id:
             raise ValidationError("No se encontró el ID de la transacción de pago")
         
@@ -118,16 +112,25 @@ class RefundInvoiceWizard(models.TransientModel):
             "metadata[partner_name]": self.invoice_id.partner_id.name,
             "metadata[partner_email]": self.invoice_id.partner_id.email,
         }
+        
         if self.refund_reason and self.refund_reason != 'other':
             data['reason'] = self.refund_reason
         
         if self.amount < self.invoice_id.amount_total:
             data['amount'] = int(self.amount * 100)
-            
+        
         if self.refund_description:
             data['metadata[refund_description]'] = self.refund_description
         
-        stripe.data = data
+        return data
+
+    def refund_invoice(self):
+        stripe_provider = self._get_stripe_payment_provider()
+        stripe = StripeRequestHandler(
+            api_key=stripe_provider.stripe_secret_key
+            )
+        
+        stripe.data = self._prepare_data(provider_id=stripe_provider.id)
         response = stripe.refund()
         
         if response.get('status_code') != 200:

@@ -14,11 +14,15 @@
             </xpath>
 
             <xpath expr="//button[@name='action_reverse']" position="after">
-              <button name="invoice_refund.action_refund_invoice_wizard" string="Reembolso" type="action" class="btn-primary"/>
+              <button name="invoice_refund.action_refund_invoice_wizard" 
+                      string="Reembolso" 
+                      type="action" 
+                      class="btn-primary"
+                      attrs="{'invisible': ['|', '|', ('payment_state', '!=', 'paid'), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice')]}"/>
             </xpath>
 
             <xpath expr="//button[@name='action_reverse']" position="attributes">
-              <attribute name="invisible">0</attribute>
+              <attribute name="invisible">1</attribute>
             </xpath>
         </field>
       </record>
