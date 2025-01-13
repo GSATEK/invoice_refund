@@ -45,6 +45,29 @@ class AccountMove(models.Model):
     
     @staticmethod
     def _validate_invoice_json(vals: dict):
+        """
+        Validates the provided invoice JSON data.
+        Args:
+            vals (dict): A dictionary containing the invoice data to be validated.
+        Raises:
+            ValidationError: If any of the required fields are missing or invalid.
+        Required Fields:
+            - client_name (str): The name of the client.
+            - client_email (str): The email of the client.
+            - service_name (str): The name of the service.
+            - service_description (str): The description of the service.
+            - service_price (float): The price of the service.
+            - reservation_date (str): The reservation date in the format '%Y-%m-%d %H:%M:%S'.
+            - payment_due_date_in_case_of_default (str): The payment due date in case of default in the format '%Y-%m-%d %H:%M:%S'.
+            - wordpress_reservation_id (str): The WordPress reservation ID.
+        Validation Steps:
+            1. Checks if all required fields are present in the `vals` dictionary.
+            2. Validates that `client_name`, `client_email`, `service_name`, `service_description`, and `wordpress_reservation_id` are valid strings.
+            3. Validates that `client_email` is a valid email address.
+            4. Validates that `service_price` is a valid number.
+            5. Validates that `reservation_date`, `payment_due_date_in_case_of_default`, and `invoice_date` (if present) are valid date strings in the format '%Y-%m-%d %H:%M:%S'.
+        """
+        
         required_fields = [
             "client_name", 
             "client_email", 
@@ -99,6 +122,21 @@ class AccountMove(models.Model):
         return self.env['res.partner'].create({'email': email, 'name': name}).id
     
     def create_account_move_line_from_vals(self, vals: dict):
+        """
+        Create an account move line from the provided values.
+        This method creates an account move line using the provided values dictionary.
+        It composes the name of the move line using the service name and description,
+        retrieves the product service reference, and sets the necessary fields for the
+        account move line.
+        Args:
+            vals (dict): A dictionary containing the following keys:
+                - service_name (str): The name of the service.
+                - service_description (str): The description of the service.
+                - service_price (float): The price of the service.
+        Returns:
+            recordset: The created account move line record.
+        """
+        
         def compose_name(service_name: str, service_description: str):
             return f"{service_name} - {service_description}"
         
@@ -114,6 +152,15 @@ class AccountMove(models.Model):
         return account_move_line
     
     def generate_payment_link(self):
+        """
+        Generates a payment link for the current account move.
+        This method creates a new payment link using the 'payment.link.wizard' model
+        with the relevant details from the current account move, such as the total amount,
+        currency, partner, model, record ID, and description.
+        Returns:
+            str: The generated payment link.
+        """
+        
         payment_link = self.env['payment.link.wizard'].create({
             'amount': self.amount_total,
             'currency_id': self.currency_id.id,
@@ -126,6 +173,23 @@ class AccountMove(models.Model):
 
     @api.model
     def create_invoice(self, vals: dict):
+        """
+        Creates an invoice based on the provided values.
+        Args:
+            vals (dict): A dictionary containing the invoice details. Expected keys include:
+                - 'client_email' (str): The email of the client.
+                - 'client_name' (str): The name of the client.
+                - 'invoice_date' (str, optional): The date of the invoice.
+                - 'reservation_date' (str): The reservation date.
+                - 'payment_due_date_in_case_of_default' (str): The payment due date in case of default.
+                - 'wordpress_reservation_id' (str): The WordPress reservation ID.
+        Returns:
+            dict: A dictionary with the result of the invoice creation. Contains:
+                - 'success' (bool): True if the invoice was created successfully, False otherwise.
+                - 'message' (str): A message indicating the result of the operation.
+                - 'payment_link' (str, optional): The payment link if the invoice was created successfully.
+        """
+        
         try:
             self._validate_invoice_json(vals)
             move_vals = {

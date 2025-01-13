@@ -6,13 +6,22 @@ from odoo import models, fields, api
 from  odoo.exceptions import ValidationError
 
 OPTIONS = [
-            ('duplicate', 'Duplicado'),
-            ('fraudulent', 'Fraudulento'),
-            ('requested_by_customer', 'Solicitado por el cliente'),
-            ('other', 'Otro'),
-        ]
+    ('duplicate', 'Duplicado'),
+    ('fraudulent', 'Fraudulento'),
+    ('requested_by_customer', 'Solicitado por el cliente'),
+    ('other', 'Otro'),
+    ]
 
 def get_option(options: list, key: str) -> str:
+    """
+    Retrieve the value associated with a given key from a list of options.
+    Args:
+        options (list): A list of tuples where each tuple contains a key-value pair.
+        key (str): The key for which the corresponding value needs to be retrieved.
+    Returns:
+        str: The value associated with the given key if found, otherwise an empty string.
+    """
+    
     if not key:
         return ""
     
@@ -20,6 +29,19 @@ def get_option(options: list, key: str) -> str:
     return reason[0][1] if reason else ""
 
 class StripeRequestHandler:
+    """
+    A handler for making requests to the Stripe API, specifically for creating refunds.
+    Attributes:
+        endpoints (dict): A dictionary containing the API endpoints.
+        api_key (str): The API key used for authenticating requests.
+        __data (dict): A private attribute to store the data for the request.
+    Properties:
+        headers (dict): Returns the headers required for the request.
+        data (dict): Gets or sets the data for the request.
+    Methods:
+        refund(): Sends a refund request to the Stripe API.
+    """
+    
     endpoints = {
         'create_refund': 'https://api.stripe.com/v1/refunds'
     }
@@ -47,6 +69,20 @@ class StripeRequestHandler:
         self.__data = data
         
     def refund(self):
+        """
+        Sends a POST request to the 'create_refund' endpoint to create a refund.
+        This method retrieves the URL for the 'create_refund' endpoint from the 
+        `endpoints` attribute, and sends a POST request with the headers and data 
+        specified in the `headers` and `data` attributes, respectively.
+        Returns:
+            dict: A dictionary containing the status code of the response and the 
+                  JSON response content.
+                  Example:
+                  {
+                      "status_code": 200,
+                      "response": {...}
+        """
+        
         url = self.endpoints.get('create_refund')
         response = requests.post(url, headers=self.headers, data=self.data)
         return {
@@ -119,6 +155,17 @@ class RefundInvoiceWizard(models.TransientModel):
         return stripe_payment_provider
     
     def _get_charge_id(self, provider_id: int) -> str:
+        """
+        Retrieve the charge ID for a given provider.
+        This method filters the transaction IDs associated with the invoice to find the one
+        that matches the specified provider ID and has a state of 'done'. It then returns
+        the provider reference of the matching transaction.
+        Args:
+            provider_id (int): The ID of the provider to filter transactions by.
+        Returns:
+            str: The provider reference of the matching transaction.
+        """
+        
         return self.invoice_id.transaction_ids.filtered(lambda tx: tx.state == 'done'\
             and tx.provider_id.id == provider_id).provider_reference
         
@@ -149,6 +196,18 @@ class RefundInvoiceWizard(models.TransientModel):
         return data
 
     def refund_invoice(self):
+        """
+        Process the refund of an invoice using Stripe.
+        This method handles the refund process by interacting with the Stripe API.
+        It prepares the necessary data, sends the refund request, and processes
+        the response. If the refund is successful, it creates a record of the refund
+        and updates the invoice payment state.
+        Raises:
+            ValidationError: If the refund request fails or the response status code is not 200.
+        Returns:
+            None
+        """
+        
         stripe_provider = self._get_stripe_payment_provider()
         stripe = StripeRequestHandler(
             api_key=stripe_provider.stripe_secret_key
