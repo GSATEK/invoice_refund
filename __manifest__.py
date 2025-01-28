@@ -19,8 +19,8 @@
     'data': [
         'security/ir.model.access.csv',
         'data/products.xml',
+        'wizard/refund_invoice_wizard.xml',
         'views/account_move.xml',
         'views/stripe_refund.xml',
-        'wizard/refund_invoice_wizard.xml'
     ],
 }
