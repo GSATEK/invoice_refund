@@ -9,5 +9,20 @@
         <field name="standard_price">50.0</field>
         <field name="purchase_ok">False</field>
     </record>
+    <record id="product_parejas_de_hecho" model="product.product">
+        <field name="name">Parejas de hecho</field>
+        <field name="type">service</field>
+        <field name="categ_id" ref="product.product_category_all"/>
+        <field name="list_price">80.0</field>
+        <field name="purchase_ok">False</field>
+    </record>
+
+    <record id="product_salidas" model="product.product">
+        <field name="name">Salidas</field>
+        <field name="type">service</field>
+        <field name="categ_id" ref="product.product_category_all"/>
+        <field name="list_price">200.0</field>
+        <field name="purchase_ok">False</field>
+    </record>
 
 </odoo>

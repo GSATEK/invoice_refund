@@ -6,6 +6,7 @@ from odoo import models, fields, api
 from  odoo.exceptions import ValidationError
 
 OPTIONS = [
+    ('absence', 'Falta de asistencia'),
     ('duplicate', 'Duplicado'),
     ('fraudulent', 'Fraudulento'),
     ('requested_by_customer', 'Solicitado por el cliente'),
@@ -109,6 +110,7 @@ class RefundInvoiceWizard(models.TransientModel):
     refund_reason = fields.Selection(
         OPTIONS,
         string="Motivo del reembolso",
+        default='absence',
     )
     refund_description = fields.Text(string="Descripción del reembolso")
     amount = fields.Monetary(
@@ -117,6 +119,13 @@ class RefundInvoiceWizard(models.TransientModel):
         default=lambda self: self._default_amount(), 
         required=True
         )
+
+    @api.onchange('refund_reason')
+    def _onchange_refund_reason(self):
+        if self.refund_reason == 'absence':
+            self.amount = self._default_amount() / 2
+        else:
+            self.amount = self._default_amount()
     
     @api.constrains('amount')
     def _check_amount(self):

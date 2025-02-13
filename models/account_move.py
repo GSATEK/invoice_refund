@@ -6,6 +6,11 @@ from odoo.addons.invoice_refund.utils.utils import check_if_fields_in_vals, chec
     check_if_string_is_valid, check_if_number_is_valid, string_to_datestamp
 
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
+
 class AccountMove(models.Model):
     _inherit = 'account.move'
     
@@ -139,14 +144,23 @@ class AccountMove(models.Model):
         
         def compose_name(service_name: str, service_description: str):
             return f"{service_name} - {service_description}"
-        
-        product_id = self.env.ref('invoice_refund.product_service', raise_if_not_found=False)
+
+        product = self.env['product.product'].search([('name', '=', vals.get('service_name'))], limit=1)
+        _logger.info(f"product: {product}")
+        if not product:
+            product = self.env['product.product'].create({
+                'name': vals.get('service_name'),
+                'type': 'service',
+                'list_price': vals.get('service_price'),
+                'categ_id': self.env.ref('product.product_category_all').id,
+                'purchase_ok': False,
+            })
         account_move_line = self.env['account.move.line'].create({
-            'product_id': product_id.id,
+            'product_id': product.id,
             'name': compose_name(vals.get('service_name'), vals.get('service_description')),
             'tax_ids': False,
             'quantity': 1,
-            'price_unit': vals.get('service_price'),
+            'price_unit': product.list_price,
             'move_id': self.id,
         })
         return account_move_line
