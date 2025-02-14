@@ -13,6 +13,7 @@
 
             <xpath expr="//field[@name='partner_id']" position="after">
               <field name="wordpress_reservation_id" readonly="1"/>
+                <field name="work_done"/>
             </xpath>
 
             <xpath expr="//button[@name='action_reverse']" position="after">
@@ -20,7 +21,7 @@
                       string="Reembolso" 
                       type="action" 
                       class="btn-primary"
-                      attrs="{'invisible': ['|', '|', '|', ('payment_state', 'not in', ['paid', 'stripe_refund']), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice'), ('stripe_fully_refunded', '=', True)]}"/>
+                      attrs="{'invisible': ['|', '|', '|', ('payment_state', 'not in', ['paid', 'stripe_refund','pending_refund']), ('state', '=', 'draft'), ('move_type', '!=', 'out_invoice'), ('stripe_fully_refunded', '=', True)]}"/>
             </xpath>
 
             <xpath expr="//button[@name='action_reverse']" position="attributes">
@@ -32,6 +33,12 @@
                       bg_color="bg-danger" 
                       title="Reembolso Stripe"
                       attrs="{'invisible': [('payment_state', '!=', 'stripe_refund')]}"/>
+            </xpath>
+            <xpath expr="//sheet/widget[@name='web_ribbon']" position="after">
+              <widget name="web_ribbon"
+                      bg_color="bg-danger"
+                      title="Reembolso pendiente"
+                      attrs="{'invisible': [('payment_state', '!=', 'pending_refund')]}"/>
             </xpath>
 
             <xpath expr="//div[hasclass('oe_button_box')]" position="inside">

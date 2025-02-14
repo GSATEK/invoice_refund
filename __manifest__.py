@@ -22,5 +22,7 @@
         'wizard/refund_invoice_wizard.xml',
         'views/account_move.xml',
         'views/stripe_refund.xml',
+        'views/res_config_settings_view.xml',
+        'data/crons.xml',
     ],
 }

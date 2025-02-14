@@ -4,6 +4,7 @@ from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 from odoo.addons.invoice_refund.utils.utils import check_if_fields_in_vals, check_if_email_is_valid, \
     check_if_string_is_valid, check_if_number_is_valid, string_to_datestamp
+from datetime import timedelta
 
 
 import logging
@@ -13,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 class AccountMove(models.Model):
     _inherit = 'account.move'
-    
+
     reservation_date = fields.Datetime(string="Fecha de reserva")
     payment_due_date_in_case_of_default = fields.Datetime(string="Fecha de cobro en caso de incumplimiento")
     wordpress_reservation_id = fields.Char(string="ID de reserva en Wordpress")
@@ -21,7 +22,14 @@ class AccountMove(models.Model):
     stripe_refund_count = fields.Integer(string="Cantidad de reembolsos Stripe", compute='_compute_stripe_refund_count')
     stripe_refunded_amount = fields.Monetary(string="Monto reembolsado", compute='_compute_stripe_refunded_amount', store=True)
     stripe_fully_refunded = fields.Boolean(string="Totalmente reembolsado", compute='_compute_stripe_fully_refunded', store=True)
-    
+    work_done = fields.Boolean(string="Trabajo realizado", default=False)
+    payment_state = fields.Selection(
+        selection_add=[
+            ('pending_refund', 'Reembolso Pendiente'),
+            ('stripe_refund', 'Reembolso Stripe'),
+        ])
+
+
     @api.depends('stripe_refund_ids')
     def _compute_stripe_refunded_amount(self):
         for record in self:
@@ -29,7 +37,7 @@ class AccountMove(models.Model):
                 record.stripe_refunded_amount = sum(record.stripe_refund_ids.mapped('amount_refunded'))
             else:
                 record.stripe_refunded_amount = 0
-    
+
     @api.depends('amount_total', 'stripe_refunded_amount')
     def _compute_stripe_fully_refunded(self):
         for record in self:
@@ -37,17 +45,14 @@ class AccountMove(models.Model):
                 record.stripe_fully_refunded = record.amount_total == record.stripe_refunded_amount
             else:
                 record.stripe_fully_refunded = False
-    
+
     @api.depends('stripe_refund_ids')
     def _compute_stripe_refund_count(self):
         for record in self:
             record.stripe_refund_count = len(record.stripe_refund_ids)
-    
-    payment_state = fields.Selection(
-        selection_add=[
-            ('stripe_refund', 'Reembolso Stripe'),
-            ])
-    
+
+
+
     @staticmethod
     def _validate_invoice_json(vals: dict):
         """
@@ -63,24 +68,22 @@ class AccountMove(models.Model):
             - service_description (str): The description of the service.
             - service_price (float): The price of the service.
             - reservation_date (str): The reservation date in the format '%Y-%m-%d %H:%M:%S'.
-            - payment_due_date_in_case_of_default (str): The payment due date in case of default in the format '%Y-%m-%d %H:%M:%S'.
             - wordpress_reservation_id (str): The WordPress reservation ID.
         Validation Steps:
             1. Checks if all required fields are present in the `vals` dictionary.
             2. Validates that `client_name`, `client_email`, `service_name`, `service_description`, and `wordpress_reservation_id` are valid strings.
             3. Validates that `client_email` is a valid email address.
             4. Validates that `service_price` is a valid number.
-            5. Validates that `reservation_date`, `payment_due_date_in_case_of_default`, and `invoice_date` (if present) are valid date strings in the format '%Y-%m-%d %H:%M:%S'.
+            5. Validates that `reservation_date` and `invoice_date` (if present) are valid date strings in the format '%Y-%m-%d %H:%M:%S'.
         """
-        
+
         required_fields = [
-            "client_name", 
-            "client_email", 
+            "client_name",
+            "client_email",
             "service_name",
             "service_description",
             "service_price",
             "reservation_date",
-            "payment_due_date_in_case_of_default",
             "wordpress_reservation_id",]
         theres_required_fields = check_if_fields_in_vals(
             vals=vals,
@@ -89,43 +92,43 @@ class AccountMove(models.Model):
         )
         if not theres_required_fields:
             raise ValidationError(f"DEBE ENVIAR LOS CAMPOS OBLIGATORIOS: {required_fields}")
-        
+
         if not check_if_string_is_valid(vals.get('client_name')):
             raise ValidationError("El campo 'client_name' es obligatorio.")
-        
+
         if not check_if_string_is_valid(vals.get('client_email')):
             raise ValidationError("El campo 'client_email' es obligatorio.")
-        
+
         if not check_if_email_is_valid(vals.get('client_email')):
             raise ValidationError("El campo 'client_email' debe ser un correo electrónico válido.")
-        
+
         if not check_if_string_is_valid(vals.get('service_name')):
             raise ValidationError("El campo 'service_name' es obligatorio.")
-        
+
         if not check_if_string_is_valid(vals.get('service_description')):
             raise ValidationError("El campo 'service_description' es obligatorio.")
-        
+
         if not check_if_number_is_valid(vals.get('service_price')):
             raise ValidationError("El campo 'service_price' es obligatorio.")
-        
+
         if not check_if_string_is_valid(vals.get('wordpress_reservation_id')):
             raise ValidationError("El campo 'wordpress_reservation_id' es obligatorio.")
-        
+
         try:
             format: str = "%Y-%m-%d %H:%M:%S"
-            date_keys = ['reservation_date', 'payment_due_date_in_case_of_default', 'invoice_date']
+            date_keys = ['reservation_date', 'invoice_date']
             for date_key in date_keys:
                 if date_key in vals:
                     string_to_datestamp(vals.get(date_key), format=format)
         except Exception as e:
             raise ValidationError(f"El campo '{date_key}' debe ser un string válido y en formato: '{format}'.")
-        
+
     def get_partner_id_from_vals(self, email: str, name: str):
         partner = self.env['res.partner'].search([('email', '=', email)], limit=1)
         if partner:
             return partner.id
         return self.env['res.partner'].create({'email': email, 'name': name}).id
-    
+
     def create_account_move_line_from_vals(self, vals: dict):
         """
         Create an account move line from the provided values.
@@ -141,7 +144,7 @@ class AccountMove(models.Model):
         Returns:
             recordset: The created account move line record.
         """
-        
+
         def compose_name(service_name: str, service_description: str):
             return f"{service_name} - {service_description}"
 
@@ -164,7 +167,7 @@ class AccountMove(models.Model):
             'move_id': self.id,
         })
         return account_move_line
-    
+
     def generate_payment_link(self):
         """
         Generates a payment link for the current account move.
@@ -174,7 +177,7 @@ class AccountMove(models.Model):
         Returns:
             str: The generated payment link.
         """
-        
+
         payment_link = self.env['payment.link.wizard'].create({
             'amount': self.amount_total,
             'currency_id': self.currency_id.id,
@@ -195,7 +198,6 @@ class AccountMove(models.Model):
                 - 'client_name' (str): The name of the client.
                 - 'invoice_date' (str, optional): The date of the invoice.
                 - 'reservation_date' (str): The reservation date.
-                - 'payment_due_date_in_case_of_default' (str): The payment due date in case of default.
                 - 'wordpress_reservation_id' (str): The WordPress reservation ID.
         Returns:
             dict: A dictionary with the result of the invoice creation. Contains:
@@ -203,7 +205,7 @@ class AccountMove(models.Model):
                 - 'message' (str): A message indicating the result of the operation.
                 - 'payment_link' (str, optional): The payment link if the invoice was created successfully.
         """
-        
+
         try:
             self._validate_invoice_json(vals)
             move_vals = {
@@ -211,19 +213,21 @@ class AccountMove(models.Model):
             'move_type': 'out_invoice',
             'invoice_date': string_to_datestamp(vals.get('invoice_date')) if 'invoice_date' in vals else fields.Date.context_today(self),
             'reservation_date': string_to_datestamp(vals.get('reservation_date')),
-            'payment_due_date_in_case_of_default': string_to_datestamp(vals.get('payment_due_date_in_case_of_default')),
             'wordpress_reservation_id': vals.get('wordpress_reservation_id'),
             }
-            
+
+            if 'payment_due_date_in_case_of_default' in vals:
+                move_vals['payment_due_date_in_case_of_default'] = string_to_datestamp(vals.get('payment_due_date_in_case_of_default'))
+
             invoice = self.create(move_vals)
             invoice.create_account_move_line_from_vals(vals)
             invoice.action_post()
             payment_link = invoice.generate_payment_link()
-           
+
             return {"success": True, "message": "Factura creada correctamente", "payment_link": payment_link}
         except Exception as e:
             return {"success": False, "message": str(e)}
-        
+
     def action_view_stripe_refunds(self):
         refunds = self.stripe_refund_ids
         action = self.env['ir.actions.actions']._for_xml_id('invoice_refund.action_stripe_refund')
@@ -238,7 +242,7 @@ class AccountMove(models.Model):
             action['res_id'] = refunds.id
         else:
             action = {'type': 'ir.actions.act_window_close'}
-            
+
         context = self.env.context.copy()
         if len(self) == 1:
             context.update({
@@ -247,3 +251,25 @@ class AccountMove(models.Model):
             })
         action['context'] = context
         return action
+
+    def _cron_update_invoice_state(self):
+        today = fields.Datetime.context_timestamp(self, fields.Datetime.now()).replace(tzinfo=None)
+
+        invoice_days_to_refund = int(
+            self.env['ir.config_parameter'].sudo().get_param('invoice_refund.invoice_days_to_refund', default=0))
+
+        invoices = self.search([
+            ('reservation_date', '!=', False),
+            ('payment_state', '=', 'paid'),
+            ('work_done', '=', False),
+            ('payment_state', '!=', 'pending_refund')
+        ])
+
+        for invoice in invoices:
+            refund_deadline = fields.Datetime.from_string(invoice.reservation_date).replace(tzinfo=None) + timedelta(
+                days=invoice_days_to_refund)
+            _logger.info(f"refund_deadline: {refund_deadline}")
+
+            if today > refund_deadline:
+                _logger.info(f"invoice: {invoice}")
+                invoice.payment_state = 'pending_refund'

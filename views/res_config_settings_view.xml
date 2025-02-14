@@ -1,0 +1,32 @@
+<odoo>
+    <record id="account_res_config_settings" model="ir.ui.view">
+        <field name="name">Vista de configuración</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='main_currency_setting_container']" position="after">
+                <h2>Reembolso de Facturas</h2>
+                <div class="row mt16 o_settings_container">
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_left_pane"/>
+                        <div class="o_setting_right_pane">
+                            <span class="o_form_label">Días para reembolso de factura</span>
+                            <div class="text-muted">
+                                Configuración de los días permitidos para realizar un reembolso de factura.
+                            </div>
+                            <div class="content-group">
+                                <div class="row mt16">
+                                    <div class="col-lg-12 mb-4">
+                                        <label for="invoice_days_to_refund" class="o_light_label mx-2"/>
+                                        <field name="invoice_days_to_refund"/>
+                                    </div>
+                                    <field name="company_id" invisible="1"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
